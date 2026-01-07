@@ -86,14 +86,14 @@ export function AppCalculator() {
     }, []);
 
 
-        useEffect(() => {
-            if (!czyZainicjalizowano.current) {
-                czyZainicjalizowano.current = true;
-                return;
-            }
+    useEffect(() => {
+        if (!czyZainicjalizowano.current) {
+            czyZainicjalizowano.current = true;
+            return;
+        }
 
-            sessionStorage.setItem('historia', JSON.stringify(historia));
-        }, [historia]);
+        sessionStorage.setItem('historia', JSON.stringify(historia));
+    }, [historia]);
 
 
 
