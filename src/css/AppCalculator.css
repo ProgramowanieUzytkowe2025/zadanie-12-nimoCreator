@@ -13,6 +13,7 @@
     display: flex;
     column-gap: 0.5rem;
     align-items: center;
+    min-width: 30rem;
 }
 
 .app-calculator > .app-calculator-przyciski {

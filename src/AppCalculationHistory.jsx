@@ -1,4 +1,4 @@
-import './AppCalculationHistory.css'
+import './css/AppCalculationHistory.css'
 
 export function AppCalculationHistory({historia, onClick}) 
 {

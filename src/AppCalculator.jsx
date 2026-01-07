@@ -1,34 +1,32 @@
-import './AppCalculator.css';
-import { useState } from 'react';
+import './css/AppCalculator.css';
+import { useState, useEffect, useRef, useReducer } from 'react';
+import { statusReducer, initialStatus } from './reducers/calcReducer.js';
 import { AppButton } from './AppButton';
 import { AppCalculationHistory } from './AppCalculationHistory';
+import { useKalkulator } from './hooks/useKalkulator';
 
 export function AppCalculator() {
-    const [liczbaA, setLiczbaA] = useState(null);
-    const [liczbaB, setLiczbaB] = useState(null);
+    const [liczbaA, setLiczbaA] = useState(0);
+    const [liczbaB, setLiczbaB] = useState(0);
     const [wynik, setWynik] = useState(null);
     const [historia, setHistoria] = useState([]);
+    const [porownanie, setPorownanie] = useState('');
+    const czyZainicjalizowano = useRef(false);
+    const [lastCalc, dispatch] = useReducer(statusReducer, initialStatus);
 
-    function dodaj() {
-        aktualizujHistorie('+', liczbaA + liczbaB);
-    }
+    const { dodaj, odejmij, pomnoz, podziel } = useKalkulator({
+        liczbaA,
+        liczbaB,
+        historia,
+        setHistoria,
+        setWynik,
+        dispatch
+    });
 
-    function odejmij() {
-        aktualizujHistorie('-', liczbaA - liczbaB);
-    }
-
-    function pomnoz() {
-        aktualizujHistorie('*', liczbaA * liczbaB);
-    }
-
-    function podziel() {
-        if(liczbaB !== 0) {
-            aktualizujHistorie('/', liczbaA / liczbaB);
-        }
-    }
 
     function liczbaAOnChange(value) {
         setLiczbaA(parsujLiczbe(value));
+        dispatch({ type: 'zmianaA' });
     }
 
     function parsujLiczbe(value) {
@@ -42,6 +40,7 @@ export function AppCalculator() {
 
     function liczbaBOnChange(value) {
         setLiczbaB(parsujLiczbe(value));
+        dispatch({ type: 'zmianaB' });
     }
 
     function onAppCalculationHistoryClick(index) {
@@ -50,32 +49,55 @@ export function AppCalculator() {
         setLiczbaA(historia[index].a);
         setLiczbaB(historia[index].b);
         setWynik(historia[index].wynik);
+        dispatch({ type: 'przywracanie' });
     }
 
-    function aktualizujHistorie(operation, wynik) {
-        const nowaHistoria = [...historia, { a: liczbaA, b: liczbaB, operation: operation, wynik: wynik }];
-        setHistoria(nowaHistoria);
-        setWynik(wynik);
-    }
-
-    let porownanie;
     let zablokujPrzyciski = liczbaA == null || liczbaB == null;
     let zablokujDzielenie = zablokujPrzyciski || liczbaB === 0;
 
-    if(zablokujPrzyciski) 
-    {
-        porownanie = '';
-    } 
-    else 
-    {
-        if(liczbaA === liczbaB) {
-            porownanie = 'Liczba A jest równa liczbie B.';
-        } else if(liczbaA > liczbaB) {
-            porownanie = 'Liczba A jest większa od liczby B.';
+    useEffect(() => {
+        if (liczbaA == null || liczbaB == null) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setPorownanie('');
+        } else if (liczbaA === liczbaB) {
+            setPorownanie('Liczba A jest równa liczbie B.');
+        } else if (liczbaA > liczbaB) {
+            setPorownanie('Liczba A jest większa od liczby B.');
         } else {
-            porownanie = 'Liczba B jest większa od liczby A.';
+            setPorownanie('Liczba B jest większa od liczby A.');
         }
-    }
+    }, [liczbaA, liczbaB]);
+
+    useEffect(() => {
+        const zapisanaHistoria = sessionStorage.getItem('historia');
+
+        if (zapisanaHistoria) {
+            const historiaZSession = JSON.parse(zapisanaHistoria);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setHistoria(historiaZSession);
+
+            if (historiaZSession.length > 0) {
+                const ostatni = historiaZSession[historiaZSession.length - 1];
+                setLiczbaA(ostatni.a);
+                setLiczbaB(ostatni.b);
+                setWynik(ostatni.wynik);
+            }
+        }
+    }, []);
+
+
+        useEffect(() => {
+            if (!czyZainicjalizowano.current) {
+                czyZainicjalizowano.current = true;
+                return;
+            }
+
+            sessionStorage.setItem('historia', JSON.stringify(historia));
+        }, [historia]);
+
+
+
+
 
     return (
     <div className='app-calculator'>
@@ -109,6 +131,13 @@ export function AppCalculator() {
             <AppButton disabled={zablokujPrzyciski} title="-" onClick={() => odejmij()}/>
             <AppButton disabled={zablokujPrzyciski} title="*" onClick={() => pomnoz()}/>
             <AppButton disabled={zablokujDzielenie} title="/" onClick={() => podziel()}/>
+        </div>
+        
+        <hr />
+
+        <div className='app-calculator-pole'>
+            <label>Ostatnia czynność: </label>
+            <span>{lastCalc}</span>
         </div>
 
         <hr />
